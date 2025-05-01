@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Search</title>
+    <!-- Meta viewport for mobile responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include custom fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600&display=swap">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-XxXlAsI+OeYeYW6k6FhYZRZrJJ0HfrOQDmK58O3zd6X+PsHy8tz/dkMSZ+/WPRXr6JZ0ZYlE+iISJpG8B8L3OA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Minified Custom CSS -->
+    <style>
+        /* CSS Variables for Light and Dark Themes */
+        :root {
+            --bg-color: #F5F5F7;
+            --text-color: #1D1D1F;
+            --secondary-text-color: #6E6E73;
+            --primary-color: #0071E3;
+            --secondary-color: #005BB5;
+            --alert-warning-bg: #FFF4E5;
+            --alert-warning-border: #FFA500;
+            --alert-error-bg: #FEEFEF;
+            --alert-error-border: #FF3B30;
+            --alert-success-bg: #ECFDF5;
+            --alert-success-border: #34C759;
+            --input-border: #D2D2D7;
+            --table-header-bg: #0071E3;
+            --table-header-text-color: #FFFFFF;
+            --table-row-hover-bg: #F0F0F3;
+            --dropdown-bg: #FFFFFF;
+            --dropdown-hover-bg: #F0F0F3;
+            --z-index-dropdown: 1000;
+            --transition-speed: 0.3s;
+            --border-radius: 12px;
+            --font-size-base: 16px;
+            --font-size-small: 14px;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1D1D1F;
+            --text-color: #F5F5F7;
+            --secondary-text-color: #A1A1AA;
+            --primary-color: #0A84FF;
+            --secondary-color: #0066CC;
+            --alert-warning-bg: #331A00;
+            --alert-warning-border: #FF9F0A;
+            --alert-error-bg: #7F1D1D;
+            --alert-error-border: #FF453A;
+            --alert-success-bg: #0D9488;
+            --alert-success-border: #10B981;
+            --input-border: #3A3A3C;
+            --table-header-bg: #005BB5;
+            --table-row-hover-bg: #2C2C2E;
+            --dropdown-bg: #2C2C2E;
+            --dropdown-hover-bg: #3A3A3C;
+        }
+
+        /* Reset and base styles */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            overflow: auto;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 60px auto 40px;
+            padding: 0 20px;
+        }
+
+        /* Dark Mode Toggle */
+        .toggle-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .toggle-switch label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 60px;
+            height: 30px;
+            background-color: var(--input-border);
+            border-radius: 15px;
+            padding: 5px;
+            transition: background-color var(--transition-speed);
+        }
+
+        .toggle-switch label::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            background-color: var(--bg-color);
+            border-radius: 50%;
+            transition: transform var(--transition-speed);
+        }
+
+        .toggle-switch input:checked + label {
+            background-color: var(--primary-color);
+        }
+
+        .toggle-switch input:checked + label::after {
+            transform: translateX(30px);
+        }
+
+        /* Form */
+        .form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .form-group {
+            flex: 1 1 300px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            max-width: 100%;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--secondary-text-color);
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 12px 16px;
+            padding-left: 40px;
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            background-color: #FFFFFF;
+            font-size: var(--font-size-base);
+            color: var(--text-color);
+            outline: none;
+            transition: border-color var(--transition-speed), box-shadow var(--transition-speed), background-color var(--transition-speed);
+            width: 100%;
+        }
+
+        [data-theme="dark"] .form-group select,
+        [data-theme="dark"] .form-group input {
+            background-color: #2C2C2E;
+            color: var(--text-color);
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 8px rgba(0, 113, 227, 0.3);
+        }
+
+        .form-group button {
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: var(--font-size-base);
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform 0.2s;
+            align-self: center;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        .form-group button:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.02);
+        }
+
+        /* Input Icons */
+        .form-group .icon {
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            transform: translateY(-50%);
+            color: var(--secondary-text-color);
+            font-size: 16px;
+            pointer-events: none;
+            transition: color var(--transition-speed);
+        }
+
+        /* Error Messages */
+        .error-message {
+            color: var(--alert-error-border);
+            font-size: var(--font-size-small);
+            margin-top: 4px;
+            display: none;
+        }
+
+        .input-error {
+            border-color: var(--alert-error-border);
+        }
+
+        /* Controls Container */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        /* Search Bar */
+        #searchBar {
+            max-width: 400px;
+            position: relative;
+            width: 100%;
+        }
+
+        #searchBar input {
+            width: 100%;
+            padding: 12px 16px;
+            padding-left: 40px;
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            background-color: #FFFFFF;
+            font-size: var(--font-size-base);
+            color: var(--text-color);
+            outline: none;
+            transition: border-color var(--transition-speed), box-shadow var(--transition-speed), background-color var(--transition-speed);
+        }
+
+        [data-theme="dark"] #searchBar input {
+            background-color: #2C2C2E;
+            color: var(--text-color);
+        }
+
+        #searchBar input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 8px rgba(0, 113, 227, 0.3);
+        }
+
+        #searchBar .icon {
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            transform: translateY(-50%);
+            color: var(--secondary-text-color);
+            font-size: 16px;
+            pointer-events: none;
+            transition: color var(--transition-speed);
+        }
+
+        /* Loading Indicator */
+        #loading {
+            display: none;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 6px solid var(--input-border);
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #loading p {
+            color: var(--secondary-text-color);
+            font-size: var(--font-size-base);
+        }
+
+        /* Alert */
+        .alert {
+            padding: 16px;
+            border-left: 4px solid #FFA500;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            color: var(--secondary-text-color);
+            font-size: var(--font-size-base);
+            background-color: #FFF4E5;
+            animation: fadein 0.5s;
+        }
+
+        .alert.error {
+            background-color: var(--alert-error-bg);
+            border-color: var(--alert-error-border);
+            color: var(--text-color);
+        }
+
+        .alert.success {
+            background-color: var(--alert-success-bg);
+            border-color: var(--alert-success-border);
+            color: var(--text-color);
+        }
+
+        .alert.warning {
+            background-color: var(--alert-warning-bg);
+            border-color: var(--alert-warning-border);
+            color: var(--text-color);
+        }
+
+        @keyframes fadein {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Export Dropdown */
+        .export-dropdown {
+            position: relative;
+            display: inline-block;
+            z-index: var(--z-index-dropdown);
+        }
+
+        .export-dropdown button {
+            padding: 10px 16px;
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .export-dropdown button:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.02);
+        }
+
+        .export-dropdown .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: var(--dropdown-bg);
+            min-width: 160px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            z-index: 1001;
+        }
+
+        .export-dropdown .dropdown-content button {
+            width: 100%;
+            padding: 10px 16px;
+            background-color: transparent;
+            color: var(--text-color);
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color var(--transition-speed);
+        }
+
+        .export-dropdown .dropdown-content button:hover {
+            background-color: var(--dropdown-hover-bg);
+        }
+
+        .export-dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Table */
+        .table-container {
+            border-radius: 12px;
+            background-color: #FFFFFF;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
+            display: none;
+            position: relative;
+            z-index: 1;
+            max-width: 100%;
+            max-height: 500px;
+            overflow: auto;
+        }
+
+        [data-theme="dark"] .table-container {
+            background-color: #2C2C2E;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+        }
+
+        table {
+            width: 100%; /* Ensure table takes full width */
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #E5E5EA;
+            font-size: 14px;
+            color: var(--text-color);
+            white-space: nowrap;
+            transition: background-color var(--transition-speed);
+        }
+
+        th {
+            background-color: var(--table-header-bg);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            color: var(--table-header-text-color);
+        }
+
+        tr:hover td {
+            background-color: var(--table-row-hover-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* No Data Message */
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: var(--secondary-text-color);
+            font-size: 18px;
+        }
+
+        /* Scrollbar Styles */
+        ::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #C7C7CC;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A1A1A6;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #searchBar {
+                margin-left: 0;
+            }
+
+            .export-dropdown {
+                margin-left: 0;
+                align-self: flex-end;
+            }
+
+            .table-container {
+                max-height: 300px;
+            }
+
+            th {
+                top: 0; /* Ensure top: 0 on mobile */
+            }
+        }
+
+        /* AI Result Section */
+        .ai-result-container {
+            border-radius: 12px;
+            background-color: #FFFFFF;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
+            display: none;
+            position: relative;
+            z-index: 1;
+            max-width: 100%;
+            overflow: auto;
+        }
+
+        [data-theme="dark"] .ai-result-container {
+            background-color: #2C2C2E;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+        }
+
+        .ai-result-container p {
+            font-size: var(--font-size-base);
+            line-height: 1.6;
+            white-space: pre-wrap; /* Preserve line breaks */
+        }
+
+        /* View Toggle Buttons */
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .view-toggle button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .view-toggle button.active {
+            background-color: var(--secondary-color);
+        }
+
+        .view-toggle button:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <!-- Dark Mode Toggle -->
+    <div class="toggle-switch">
+        <input type="checkbox" id="themeToggle" aria-label="Toggle Dark Mode">
+        <label for="themeToggle"></label>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container" id="mainContent">
+        <!-- Form -->
+        <form id="queryForm" class="form" novalidate>
+            <div class="form-group">
+                <label for="table">Select Table</label>
+                <i class="fas fa-table icon" aria-hidden="true"></i>
+                <select id="table" name="table" required aria-required="true" aria-describedby="tableError">
+                    <option value="" disabled selected>Select table name</option>
+                    <option value="salein">Sale</option>
+                    <option value="orderin">Order</option>
+                </select>
+                <small id="tableError" class="error-message">Please select a table.</small>
+            </div>
+            <div class="form-group">
+                <label for="naturalLanguageQuery">Your Query</label>
+                <i class="fas fa-search icon" aria-hidden="true"></i>
+                <input type="text" id="naturalLanguageQuery" placeholder="Enter your query in natural language" required aria-required="true" aria-describedby="queryError">
+                <small id="queryError" class="error-message">Please enter a query.</small>
+            </div>
+            <div class="form-group" style="flex-basis: 100%; display: flex; justify-content: center;">
+                <button type="submit"><i class="fas fa-play"></i> Generate</button>
+            </div>
+        </form>
+
+        <!-- Controls Container -->
+        <div class="controls" id="controls">
+            <!-- Search Bar -->
+            <div id="searchBar">
+                <i class="fas fa-search icon" aria-hidden="true"></i>
+                <input type="text" id="searchInput" placeholder="Search in results..." aria-label="Search in results">
+            </div>
+
+            <!-- Export Dropdown -->
+            <div class="export-dropdown" id="exportDropdown">
+                <button type="button" aria-haspopup="true" aria-expanded="false"><i class="fas fa-file-export"></i> Export <i class="fas fa-caret-down"></i></button>
+                <div class="dropdown-content" role="menu" aria-label="Export Options">
+                    <button type="button" id="exportExcel"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button type="button" id="exportCSV"><i class="fas fa-file-csv"></i> CSV</button>
+                    <button type="button" id="exportPDF"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button type="button" id="exportJSON"><i class="fas fa-file-code"></i> JSON</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Toggle Buttons -->
+        <div class="view-toggle" id="viewToggle" style="display: none;">
+            <button type="button" id="viewTable" class="active"><i class="fas fa-table"></i> Table View</button>
+            <button type="button" id="viewAI"><i class="fas fa-robot"></i> AI Summary</button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" role="status" aria-live="polite">
+            <div class="spinner"></div>
+            <p>Fetching Data...</p>
+        </div>
+
+        <!-- Alert Placeholder -->
+        <div id="alertPlaceholder" aria-live="assertive"></div>
+
+        <!-- Result Table -->
+        <div class="table-container" id="tableContainer">
+            <table id="resultTable" aria-label="Search Results" role="table">
+                <thead role="rowgroup"></thead>
+                <tbody role="rowgroup"></tbody>
+            </table>
+            <!-- No Data Message -->
+            <div id="noDataMessage" class="no-data" role="alert" style="display: none;">
+                No data available to display.
+            </div>
+        </div>
+
+        <!-- AI Processed Result -->
+        <div class="ai-result-container" id="aiResultContainer">
+            <p id="aiResultContent"></p>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <!-- SheetJS for Excel and CSV Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+    <!-- jsPDF for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <!-- jsPDF AutoTable Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js" defer></script>
+    <!-- FileSaver for File Saving -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" defer></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Dark Mode Toggle with Persistence
+            const toggleSwitch = document.getElementById('themeToggle');
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+            toggleSwitch.checked = savedTheme === 'dark';
+
+            toggleSwitch.addEventListener('change', () => {
+                const isDark = toggleSwitch.checked;
+                const theme = isDark ? 'dark' : 'light';
+                document.body.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                toggleSwitch.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+            });
+
+            // Form Submission with Debounced Search
+            const queryForm = document.getElementById('queryForm');
+            const loadingIndicator = document.getElementById('loading');
+            const controls = document.getElementById('controls');
+            const tableContainer = document.getElementById('tableContainer');
+            const aiResultContainer = document.getElementById('aiResultContainer');
+            const aiResultContent = document.getElementById('aiResultContent');
+            const alertPlaceholder = document.getElementById('alertPlaceholder');
+            const noDataMessage = document.getElementById('noDataMessage');
+            const viewToggle = document.getElementById('viewToggle');
+            const viewTableButton = document.getElementById('viewTable');
+            const viewAIButton = document.getElementById('viewAI');
+
+            queryForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const tableName = document.getElementById('table').value.trim();
+                const naturalLanguageQuery = document.getElementById('naturalLanguageQuery').value.trim();
+                let valid = validateForm();
+
+                if (!valid) return;
+
+                toggleFormElements(true);
+                showLoading(true);
+                clearAlerts();
+                clearTable();
+                clearAIResult();
+
+                try {
+                    const response = await fetch('/query', { // Ensure the correct endpoint is used
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ table: tableName, naturalLanguageQuery })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `Server Error: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+
+                    // Ensure both data and aiResult are present
+                    if (!result.data || !result.aiResult) {
+                        throw new Error('Invalid response format from server.');
+                    }
+
+                    // Populate AI Result but keep it hidden initially
+                    aiResultContent.textContent = result.aiResult;
+                    aiResultContainer.style.display = 'none';
+
+                    // Display Table Data if available
+                    if (Array.isArray(result.data) && result.data.length > 0) {
+                        displayData(result.data);
+                        controls.style.display = 'flex';
+                        viewToggle.style.display = 'flex';
+                        showAlert('Data fetched successfully!', 'success');
+                    } else {
+                        showAlert('No data found for this query.', 'warning');
+                        noDataMessage.style.display = 'block';
+                    }
+                } catch (error) {
+                    showAlert('Error: ' + error.message, 'error');
+                } finally {
+                    showLoading(false);
+                    toggleFormElements(false);
+                }
+            });
+
+            // Validate Form Fields
+            function validateForm() {
+                const tableName = document.getElementById('table').value.trim();
+                const naturalLanguageQuery = document.getElementById('naturalLanguageQuery').value.trim();
+                let valid = true;
+
+                if (!tableName) {
+                    showError('table', 'Please select a table.');
+                    valid = false;
+                } else {
+                    hideError('table');
+                }
+
+                if (!naturalLanguageQuery) {
+                    showError('naturalLanguageQuery', 'Please enter a query.');
+                    valid = false;
+                } else {
+                    hideError('naturalLanguageQuery');
+                }
+
+                return valid;
+            }
+
+            // Toggle Form Elements Disabled State
+            function toggleFormElements(disabled) {
+                const formElements = queryForm.elements;
+                for (let element of formElements) {
+                    element.disabled = disabled;
+                }
+            }
+
+            // Show/Hide Loading Indicator
+            function showLoading(show) {
+                loadingIndicator.style.display = show ? 'block' : 'none';
+            }
+
+            // Display Data in Table
+            function displayData(data) {
+                const table = document.getElementById('resultTable');
+                const thead = table.querySelector('thead');
+                const tbody = table.querySelector('tbody');
+
+                // Clear existing data
+                thead.innerHTML = '';
+                tbody.innerHTML = '';
+
+                // Populate headers
+                const headers = Object.keys(data[0]);
+                const headerRow = document.createElement('tr');
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+
+                // Populate rows using DocumentFragment for performance
+                const fragment = document.createDocumentFragment();
+                data.forEach(rowData => {
+                    const row = document.createElement('tr');
+                    headers.forEach(header => {
+                        const td = document.createElement('td');
+                        td.textContent = rowData[header] !== null ? rowData[header] : '';
+                        row.appendChild(td);
+                    });
+                    fragment.appendChild(row);
+                });
+                tbody.appendChild(fragment);
+
+                tableContainer.style.display = 'block';
+            }
+
+            // Display AI Result
+            function displayAIResult(aiText) {
+                aiResultContent.textContent = aiText;
+                // Keep aiResultContainer hidden by default
+                aiResultContainer.style.display = 'none';
+            }
+
+            // Clear Table
+            function clearTable() {
+                const table = document.getElementById('resultTable');
+                table.querySelector('thead').innerHTML = '';
+                table.querySelector('tbody').innerHTML = '';
+                tableContainer.style.display = 'none';
+                noDataMessage.style.display = 'none';
+                controls.style.display = 'none';
+                viewToggle.style.display = 'none';
+            }
+
+            // Clear AI Result
+            function clearAIResult() {
+                aiResultContent.textContent = '';
+                aiResultContainer.style.display = 'none';
+            }
+
+            // Show Alert
+            function showAlert(message, type) {
+                const alertClass = type;
+                alertPlaceholder.innerHTML = `
+                    <div class="alert ${alertClass}" role="alert">
+                        ${message}
+                    </div>
+                `;
+                const alert = alertPlaceholder.querySelector('.alert');
+                alert.setAttribute('tabindex', '-1');
+                alert.focus();
+                setTimeout(() => {
+                    alertPlaceholder.innerHTML = '';
+                }, 5000);
+            }
+
+            // Clear Alerts
+            function clearAlerts() {
+                alertPlaceholder.innerHTML = '';
+            }
+
+            // Show Error Message
+            function showError(fieldId, message) {
+                const field = document.getElementById(fieldId);
+                const errorMessage = document.getElementById(`${fieldId}Error`);
+                if (errorMessage) {
+                    errorMessage.textContent = message;
+                    errorMessage.style.display = 'block';
+                }
+                field.classList.add('input-error');
+            }
+
+            // Hide Error Message
+            function hideError(fieldId) {
+                const field = document.getElementById(fieldId);
+                const errorMessage = document.getElementById(`${fieldId}Error`);
+                if (errorMessage) {
+                    errorMessage.textContent = '';
+                    errorMessage.style.display = 'none';
+                }
+                field.classList.remove('input-error');
+            }
+
+            // Debounce Function to Improve Search Performance
+            function debounce(func, delay) {
+                let debounceTimer;
+                return function() {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => func.apply(context, args), delay);
+                }
+            }
+
+            // Search Functionality with Debouncing
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', debounce(function () {
+                const searchTerm = this.value.toLowerCase();
+                const table = document.getElementById('resultTable');
+                const tbody = table.querySelector('tbody');
+                const rows = tbody.getElementsByTagName('tr');
+
+                Array.from(rows).forEach(row => {
+                    const cells = row.getElementsByTagName('td');
+                    let match = false;
+                    Array.from(cells).forEach(cell => {
+                        if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                            match = true;
+                        }
+                    });
+                    row.style.display = match ? '' : 'none';
+                });
+            }, 300));
+
+            // Export Functions
+            document.getElementById('exportExcel').addEventListener('click', exportToExcel);
+            document.getElementById('exportCSV').addEventListener('click', exportToCSV);
+            document.getElementById('exportPDF').addEventListener('click', exportToPDF);
+            document.getElementById('exportJSON').addEventListener('click', exportToJSON);
+
+            function exportToExcel() {
+                try {
+                    // Ensure XLSX is loaded
+                    if (typeof XLSX === 'undefined') {
+                        throw new Error('XLSX library is not loaded.');
+                    }
+
+                    // Fetch the table element
+                    const table = document.getElementById('resultTable');
+                    if (!table) {
+                        showAlert('Table element not found!', 'error');
+                        return;
+                    }
+
+                    // Convert table to workbook
+                    const workbook = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+
+                    // Generate a dynamic filename with timestamp
+                    const timestamp = new Date().toISOString().slice(0,19).replace(/[:T]/g, '-');
+                    const filename = `data-${timestamp}.xlsx`;
+
+                    // Write and download the Excel file
+                    XLSX.writeFile(workbook, filename);
+                    showAlert('Excel file has been downloaded successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting to Excel:', error);
+                    showAlert(`Failed to download Excel file: ${error.message}`, 'error');
+                }
+            }
+
+            function exportToCSV() {
+                try {
+                    // Ensure XLSX is loaded
+                    if (typeof XLSX === 'undefined') {
+                        throw new Error('XLSX library is not loaded.');
+                    }
+
+                    // Fetch the table element
+                    const table = document.getElementById('resultTable');
+                    if (!table) {
+                        showAlert('Table element not found!', 'error');
+                        return;
+                    }
+
+                    // Convert table to workbook
+                    const workbook = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+
+                    // Generate a dynamic filename with timestamp
+                    const timestamp = new Date().toISOString().slice(0,19).replace(/[:T]/g, '-');
+                    const filename = `data-${timestamp}.csv`;
+
+                    // Write and download the CSV file
+                    XLSX.writeFile(workbook, filename, { bookType: "csv" });
+                    showAlert('CSV file has been downloaded successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting to CSV:', error);
+                    showAlert(`Failed to download CSV file: ${error.message}`, 'error');
+                }
+            }
+
+            async function exportToPDF() {
+                try {
+                    // Ensure jsPDF is loaded
+                    if (!window.jspdf) {
+                        throw new Error('jsPDF library is not loaded.');
+                    }
+
+                    const { jsPDF } = window.jspdf;
+
+                    // Fetch the table element
+                    const table = document.getElementById('resultTable');
+                    if (!table) {
+                        showAlert('Table element not found!', 'error');
+                        return;
+                    }
+
+                    // Extract headers and data
+                    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
+                    const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => {
+                        return Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim());
+                    });
+
+                    // Check if table has data
+                    if (headers.length === 0 || rows.length === 0) {
+                        showAlert('No data available to export!', 'warning');
+                        return;
+                    }
+
+                    // Determine PDF size based on number of columns
+                    let pageSize = 'a4'; // Default size
+                    const columnCount = headers.length;
+
+                    if (columnCount > 12) { // Thresholds can be adjusted as needed
+                        pageSize = 'a2';
+                    } else if (columnCount > 8) {
+                        pageSize = 'a3';
+                    } else {
+                        pageSize = 'a4';
+                    }
+
+                    // Initialize jsPDF with determined page size and landscape orientation
+                    const doc = new jsPDF('landscape', 'pt', pageSize);
+
+                    // Initialize AutoTable with configurations
+                    doc.autoTable({
+                        head: [headers],
+                        body: rows,
+                        startY: 20,
+                        styles: { 
+                            fontSize: 10,
+                            cellPadding: 4,
+                            overflow: 'hidden',
+                            halign: 'left',
+                            valign: 'middle',
+                            font: "helvetica",
+                            cellWidth: 'auto',
+                        },
+                        headStyles: { 
+                            fillColor: [0, 113, 227], 
+                            halign: 'left',
+                            textColor: 255,
+                            fontStyle: 'bold',
+                        },
+                        columnStyles: headers.reduce((acc, header, index) => {
+                            acc[index] = { 
+                                cellWidth: 'auto',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            };
+                            return acc;
+                        }, {}),
+                        tableWidth: 'auto',
+                        theme: 'striped',
+                        margin: { top: 20, right: 20, bottom: 20, left: 20 },
+                        didParseCell: function (data) {
+                            data.cell.styles.overflow = 'hidden';
+                            data.cell.styles.textOverflow = 'ellipsis';
+                            data.cell.styles.cellPadding = 6;
+                        },
+                        pageBreak: 'auto',
+                    });
+
+                    // Save the PDF with a dynamic filename
+                    const timestamp = new Date().toISOString().slice(0,19).replace(/[:T]/g, '-');
+                    doc.save(`data-${timestamp}.pdf`);
+                    showAlert('PDF file has been downloaded successfully!', 'success');
+                } catch (error) {
+                    console.error('Error exporting to PDF:', error);
+                    showAlert(`Failed to download PDF: ${error.message}`, 'error');
+                }
+            }
+
+            function exportToJSON() {
+                const table = document.getElementById('resultTable');
+                const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
+                const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => {
+                    const row = {};
+                    Array.from(tr.querySelectorAll('td')).forEach((td, index) => {
+                        row[headers[index]] = td.innerText.trim();
+                    });
+                    return row;
+                });
+
+                const jsonString = JSON.stringify(rows, null, 2);
+                const blob = new Blob([jsonString], { type: "application/json" });
+                saveAs(blob, "data.json");
+                showAlert('JSON file has been downloaded successfully!', 'success');
+            }
+
+            // View Toggle Functionality
+            viewTableButton.addEventListener('click', () => {
+                viewTableButton.classList.add('active');
+                viewAIButton.classList.remove('active');
+                tableContainer.style.display = 'block';
+                aiResultContainer.style.display = 'none';
+            });
+
+            viewAIButton.addEventListener('click', () => {
+                viewAIButton.classList.add('active');
+                viewTableButton.classList.remove('active');
+                aiResultContainer.style.display = 'block';
+                tableContainer.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
