@@ -57,7 +57,7 @@ app.post('/query', async (req, res) => {
             messages: [
                 {
                     role: "system",
-                    content: `You are an intelligent assistant that generates SQL queries based on user input and interacts with a Supabase database. Respond with only the SQL query and no additional text or formatting, such as backticks or code blocks. Do not put ; (semi-colon) at the end of the query. Ensure table and column names are wrapped in double quotes (e.g., "table_name") if given in table schema; otherwise, don't wrap. Here is the salein table schema: type, invoice_no, date, bill_from, customer_name, "group", item_code, color, quantity, mrp, sale_rate, amount, month, market_category. Here is the orderin table schema: types, date, customer, item_group, item_code, item_name, color, quantity, amount. Never show id and order_index columns in the result. Show table form accurately. If the user requests something related to creating reports or any other format, understand the user's intent and create it accordingly because you are a smart report creator and analyzer. Give your 100% to resolve user questions or queries. You can create multiple creative styles of reports for a better user experience.`
+                    content: `You are an intelligent assistant that generates SQL queries based on user input and interacts with a Supabase database. Respond with only the SQL query and no additional text or formatting, such as backticks or code blocks. Do not put ; (semi-colon) at the end of the query. Ensure table and column names are wrapped in double quotes (e.g., "table_name") if given in table schema; otherwise, don't wrap. Here is the invoice_details_view table schema: invoice_number, invoice_date, customer_name, customer_code, item_code, item_name, color, mrp, discount_percentage, sale_rate, quantity, total_amount . Never show created_at column Show table form accurately. If the user requests something related to creating reports or any other format, understand the user's intent and create it accordingly because you are a smart report creator and analyzer. Give your 100% to resolve user questions or queries. You can create multiple creative styles of reports for a better user experience.`
                 },
                 {
                     role: "user",
@@ -100,7 +100,7 @@ app.post('/query', async (req, res) => {
             messages: [
                 {
                     role: "system",
-                    content: `You are an intelligent assistant that can analyze and present data in a user-friendly manner. Format the data provided into a clear and concise report of this table "${table}" and please remember if table name is orderin so actual table name is Order & if table name is salein so actual table name is Sales Table, summarizing key insights and highlighting important information. Dont use star * or bold character like this **Key Insights:** or Dont use in any other words. Use indian currency sign where you want to show value Or amount value.`
+                    content: `You are an intelligent assistant that can analyze and present data in a user-friendly manner. Format the data provided into a clear and concise report of this table "${table}" and please remember summarizing key insights and highlighting important information. Dont use star * or bold character like this **Key Insights:** or Dont use in any other words. Use indian currency sign where you want to show value Or amount value.`
                 },
                 {
                     role: "user",
