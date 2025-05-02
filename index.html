@@ -685,47 +685,67 @@
                 clearAIResult();
 
                 try {
-                    const response = await fetch('https://myerpp.onrender.com/query', { // Ensure the correct endpoint is used
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ table: tableName, naturalLanguageQuery })
-                    });
+    // 1) Log exactly what you're sending
+    console.log('▶️  REQUEST PAYLOAD:', { table: tableName, naturalLanguageQuery });
 
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || `Server Error: ${response.statusText}`);
-                    }
+    // 2) Fire the request
+    const response = await fetch('https://myerpp.onrender.com/query', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ table: tableName, naturalLanguageQuery })
+    });
 
-                    const result = await response.json();
+    // 3) Grab raw text so you can debug non-JSON or error bodies
+    const rawText = await response.text();
+    let result;
+    try {
+      result = JSON.parse(rawText);
+    } catch (parseErr) {
+      throw new Error(`Invalid JSON from server:\n${rawText}`);
+    }
 
-                    // Ensure both data and aiResult are present
-                    if (!result.data || !result.aiResult) {
-                        throw new Error('Invalid response format from server.');
-                    }
+    // 4) Log exactly what came back
+    console.log('📦 SERVER RESPONSE:', result, `(HTTP ${response.status})`);
 
-                    // Populate AI Result but keep it hidden initially
-                    aiResultContent.textContent = result.aiResult;
-                    aiResultContainer.style.display = 'none';
+    // 5) Handle HTTP errors (but still see the body)
+    if (!response.ok) {
+      throw new Error(result.error || `Server Error: ${response.status} ${response.statusText}`);
+    }
 
-                    // Display Table Data if available
-                    if (Array.isArray(result.data) && result.data.length > 0) {
-                        displayData(result.data);
-                        controls.style.display = 'flex';
-                        viewToggle.style.display = 'flex';
-                        showAlert('Data fetched successfully!', 'success');
-                    } else {
-                        showAlert('No data found for this query.', 'warning');
-                        noDataMessage.style.display = 'block';
-                    }
-                } catch (error) {
-                    showAlert('Error: ' + error.message, 'error');
-                } finally {
-                    showLoading(false);
-                    toggleFormElements(false);
-                }
-            });
+    // 6) Destructure and validate
+    const { data, aiResult } = result;
+    if (!Array.isArray(data)) {
+      throw new Error(`Expected "data" to be an array, but got ${typeof data}`);
+    }
+    if (typeof aiResult !== 'string') {
+      throw new Error(`Expected "aiResult" to be a string, but got ${typeof aiResult}`);
+    }
+
+    // 7) Update the AI panel (hidden by default)
+    aiResultContent.textContent = aiResult;
+    aiResultContainer.style.display = 'none';
+
+    // 8) Render your table or no-data message
+    if (data.length > 0) {
+      displayData(data);
+      controls.style.display     = 'flex';
+      viewToggle.style.display   = 'flex';
+      showAlert('Data fetched successfully!', 'success');
+    } else {
+      showAlert('No data found for this query.', 'warning');
+      noDataMessage.style.display = 'block';
+    }
+
+  } catch (error) {
+    console.error('❌ FETCH ERROR:', error);
+    showAlert(`Error: ${error.message}`, 'error');
+
+  } finally {
+    // always teardown loading state
+    showLoading(false);
+    toggleFormElements(false);
+  }
+});
 
             // Validate Form Fields
             function validateForm() {
