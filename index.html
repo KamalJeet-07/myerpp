@@ -643,7 +643,7 @@
     <!-- Custom JavaScript -->
     <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // ==== Dark Mode Toggle with Persistence ====
+  // ==== Dark Mode Toggle with Persistence ====  
   const toggleSwitch = document.getElementById('themeToggle');
   const savedTheme   = localStorage.getItem('theme') || 'light';
   document.body.setAttribute('data-theme', savedTheme);
@@ -659,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   });
 
-  // ==== Grab DOM Elements ====
+  // ==== Grab DOM Elements ====  
   const queryForm         = document.getElementById('queryForm');
   const tableInput        = document.getElementById('table');
   const nlqInput          = document.getElementById('naturalLanguageQuery');
@@ -676,64 +676,57 @@ document.addEventListener('DOMContentLoaded', () => {
   const viewAIButton      = document.getElementById('viewAI');
   const searchInput       = document.getElementById('searchInput');
 
-  // ==== Form Submission Handler ====
+  // ==== Form Submission Handler ====  
   queryForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearAlerts(); clearTable(); clearAIResult();
+
     const tableName            = tableInput.value.trim();
     const naturalLanguageQuery = nlqInput.value.trim();
-    if (!validateForm()) return;
+    if (!tableName || !naturalLanguageQuery) {
+      showAlert('कृपया टेबल और क्वेरी दोनों दें।', 'error');
+      return;
+    }
 
     toggleFormElements(true);
     showLoading(true);
-    clearAlerts();
-    clearTable();
-    clearAIResult();
 
     try {
       console.log('▶️ REQUEST PAYLOAD:', { table: tableName, naturalLanguageQuery });
 
-      const response = await fetch('https://myerpp.onrender.com/query', {
+      const response = await fetch('/query', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ table: tableName, naturalLanguageQuery })
       });
 
-      const rawText = await response.text();
+      const text = await response.text();
       let result;
       try {
-        result = JSON.parse(rawText);
-      } catch {
-        throw new Error(`Invalid JSON from server:\n${rawText}`);
+        result = JSON.parse(text);
+      } catch (jsonErr) {
+        throw new Error(`Invalid JSON from server:\n${text}`);
       }
-      console.log('📦 SERVER RESPONSE:', result, `(HTTP ${response.status})`);
 
       if (!response.ok) {
-        throw new Error(result.error || `Server Error: ${response.status} ${response.statusText}`);
+        throw new Error(result.error || `Server Error: ${response.status}`);
       }
 
-      // ==== Handle both array and scalar data ====
       const { data, aiResult } = result;
-      let finalData;
-      if (Array.isArray(data)) {
-        finalData = data;
-      } else if (typeof data === 'number' || typeof data === 'string') {
-        finalData = [{ Result: data }];
-      } else {
-        throw new Error(`Expected "data" to be an array or scalar, but got ${typeof data}`);
-      }
+      const finalData = Array.isArray(data)
+        ? data
+        : [{ Result: data }];
 
-      // ==== Populate AI result (hidden by default) ====
-      aiResultContent.textContent      = aiResult ?? '';
-      aiResultContainer.style.display  = 'none';
+      aiResultContent.textContent     = aiResult || '';
+      aiResultContainer.style.display = 'none';
 
-      // ==== Render table or no‑data message ====
-      if (finalData.length > 0) {
+      if (finalData.length) {
         displayData(finalData);
         controls.style.display   = 'flex';
         viewToggle.style.display = 'flex';
-        showAlert('Data fetched successfully!', 'success');
+        showAlert('डेटा सफलतापूर्वक मिला!', 'success');
       } else {
-        showAlert('No data found for this query.', 'warning');
+        showAlert('इस क्वेरी के लिए कोई डेटा नहीं मिला।', 'warning');
         noDataMessage.style.display = 'block';
       }
 
@@ -746,24 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ==== Utility Functions ====
-  function validateForm() {
-    let valid = true;
-    if (!tableInput.value.trim()) {
-      showError('table', 'Please select a table.');
-      valid = false;
-    } else {
-      hideError('table');
-    }
-    if (!nlqInput.value.trim()) {
-      showError('naturalLanguageQuery', 'Please enter a query.');
-      valid = false;
-    } else {
-      hideError('naturalLanguageQuery');
-    }
-    return valid;
-  }
-
+  // ==== Utility Functions ====  
   function toggleFormElements(disabled) {
     Array.from(queryForm.elements).forEach(el => el.disabled = disabled);
   }
@@ -798,7 +774,6 @@ document.addEventListener('DOMContentLoaded', () => {
       frag.appendChild(tr);
     });
     tbody.appendChild(frag);
-
     tableContainer.style.display = 'block';
   }
 
@@ -830,27 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
     alertPlaceholder.innerHTML = '';
   }
 
-  function showError(fieldId, msg) {
-    const fld = document.getElementById(fieldId);
-    const err = document.getElementById(`${fieldId}Error`);
-    if (err) {
-      err.textContent = msg;
-      err.style.display = 'block';
-    }
-    fld.classList.add('input-error');
-  }
-
-  function hideError(fieldId) {
-    const fld = document.getElementById(fieldId);
-    const err = document.getElementById(`${fieldId}Error`);
-    if (err) {
-      err.textContent = '';
-      err.style.display = 'none';
-    }
-    fld.classList.remove('input-error');
-  }
-
-  // ==== Search with Debounce ====
+  // ==== Search with Debounce ====  
   function debounce(fn, delay) {
     let timer;
     return function(...args) {
@@ -865,7 +820,6 @@ document.addEventListener('DOMContentLoaded', () => {
       r.style.display = text.includes(term) ? '' : 'none';
     });
   }, 300));
-
             // Export Functions
             document.getElementById('exportExcel').addEventListener('click', exportToExcel);
             document.getElementById('exportCSV').addEventListener('click', exportToCSV);
