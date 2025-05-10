@@ -642,184 +642,261 @@
 
     <!-- Custom JavaScript -->
     <script>
-document.addEventListener('DOMContentLoaded', () => {
-  // ==== Dark Mode Toggle with Persistence ====  
-  const toggleSwitch = document.getElementById('themeToggle');
-  const savedTheme   = localStorage.getItem('theme') || 'light';
-  document.body.setAttribute('data-theme', savedTheme);
-  toggleSwitch.checked = savedTheme === 'dark';
-  toggleSwitch.addEventListener('change', () => {
-    const isDark = toggleSwitch.checked;
-    const theme  = isDark ? 'dark' : 'light';
-    document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-    toggleSwitch.setAttribute(
-      'aria-label',
-      isDark ? 'Switch to light mode' : 'Switch to dark mode'
-    );
-  });
+ document.addEventListener('DOMContentLoaded', () => {
+            // Dark Mode Toggle with Persistence
+            const toggleSwitch = document.getElementById('themeToggle');
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+            toggleSwitch.checked = savedTheme === 'dark';
 
-  // ==== Grab DOM Elements ====  
-  const queryForm         = document.getElementById('queryForm');
-  const tableInput        = document.getElementById('table');
-  const nlqInput          = document.getElementById('naturalLanguageQuery');
-  const loadingIndicator  = document.getElementById('loading');
-  const controls          = document.getElementById('controls');
-  const tableContainer    = document.getElementById('tableContainer');
-  const resultTable       = document.getElementById('resultTable');
-  const aiResultContainer = document.getElementById('aiResultContainer');
-  const aiResultContent   = document.getElementById('aiResultContent');
-  const alertPlaceholder  = document.getElementById('alertPlaceholder');
-  const noDataMessage     = document.getElementById('noDataMessage');
-  const viewToggle        = document.getElementById('viewToggle');
-  const viewTableButton   = document.getElementById('viewTable');
-  const viewAIButton      = document.getElementById('viewAI');
-  const searchInput       = document.getElementById('searchInput');
+            toggleSwitch.addEventListener('change', () => {
+                const isDark = toggleSwitch.checked;
+                const theme = isDark ? 'dark' : 'light';
+                document.body.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                toggleSwitch.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+            });
 
-  // ==== Form Submission Handler ====  
-  queryForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    clearAlerts(); clearTable(); clearAIResult();
+            // Form Submission with Debounced Search
+            const queryForm = document.getElementById('queryForm');
+            const loadingIndicator = document.getElementById('loading');
+            const controls = document.getElementById('controls');
+            const tableContainer = document.getElementById('tableContainer');
+            const aiResultContainer = document.getElementById('aiResultContainer');
+            const aiResultContent = document.getElementById('aiResultContent');
+            const alertPlaceholder = document.getElementById('alertPlaceholder');
+            const noDataMessage = document.getElementById('noDataMessage');
+            const viewToggle = document.getElementById('viewToggle');
+            const viewTableButton = document.getElementById('viewTable');
+            const viewAIButton = document.getElementById('viewAI');
 
-    const tableName            = tableInput.value.trim();
-    const naturalLanguageQuery = nlqInput.value.trim();
-    if (!tableName || !naturalLanguageQuery) {
-      showAlert('कृपया टेबल और क्वेरी दोनों दें।', 'error');
-      return;
-    }
+            queryForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const tableName = document.getElementById('table').value.trim();
+                const naturalLanguageQuery = document.getElementById('naturalLanguageQuery').value.trim();
+                let valid = validateForm();
 
-    toggleFormElements(true);
-    showLoading(true);
+                if (!valid) return;
 
-    try {
-      console.log('▶️ REQUEST PAYLOAD:', { table: tableName, naturalLanguageQuery });
+                toggleFormElements(true);
+                showLoading(true);
+                clearAlerts();
+                clearTable();
+                clearAIResult();
 
-      const response = await fetch('/query', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ table: tableName, naturalLanguageQuery })
-      });
+                try {
+                    const response = await fetch('/query', { // Ensure the correct endpoint is used
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ table: tableName, naturalLanguageQuery })
+                    });
 
-      const text = await response.text();
-      let result;
-      try {
-        result = JSON.parse(text);
-      } catch (jsonErr) {
-        throw new Error(`Invalid JSON from server:\n${text}`);
-      }
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `Server Error: ${response.statusText}`);
+                    }
 
-      if (!response.ok) {
-        throw new Error(result.error || `Server Error: ${response.status}`);
-      }
+                    const result = await response.json();
 
-      const { data, aiResult } = result;
-      const finalData = Array.isArray(data)
-        ? data
-        : [{ Result: data }];
+                    // Ensure both data and aiResult are present
+                    if (!result.data || !result.aiResult) {
+                        throw new Error('Invalid response format from server.');
+                    }
 
-      aiResultContent.textContent     = aiResult || '';
-      aiResultContainer.style.display = 'none';
+                    // Populate AI Result but keep it hidden initially
+                    aiResultContent.textContent = result.aiResult;
+                    aiResultContainer.style.display = 'none';
 
-      if (finalData.length) {
-        displayData(finalData);
-        controls.style.display   = 'flex';
-        viewToggle.style.display = 'flex';
-        showAlert('डेटा सफलतापूर्वक मिला!', 'success');
-      } else {
-        showAlert('इस क्वेरी के लिए कोई डेटा नहीं मिला।', 'warning');
-        noDataMessage.style.display = 'block';
-      }
+                    // Display Table Data if available
+                    if (Array.isArray(result.data) && result.data.length > 0) {
+                        displayData(result.data);
+                        controls.style.display = 'flex';
+                        viewToggle.style.display = 'flex';
+                        showAlert('Data fetched successfully!', 'success');
+                    } else {
+                        showAlert('No data found for this query.', 'warning');
+                        noDataMessage.style.display = 'block';
+                    }
+                } catch (error) {
+                    showAlert('Error: ' + error.message, 'error');
+                } finally {
+                    showLoading(false);
+                    toggleFormElements(false);
+                }
+            });
 
-    } catch (error) {
-      console.error('❌ FETCH ERROR:', error);
-      showAlert(`Error: ${error.message}`, 'error');
-    } finally {
-      showLoading(false);
-      toggleFormElements(false);
-    }
-  });
+            // Validate Form Fields
+            function validateForm() {
+                const tableName = document.getElementById('table').value.trim();
+                const naturalLanguageQuery = document.getElementById('naturalLanguageQuery').value.trim();
+                let valid = true;
 
-  // ==== Utility Functions ====  
-  function toggleFormElements(disabled) {
-    Array.from(queryForm.elements).forEach(el => el.disabled = disabled);
-  }
+                if (!tableName) {
+                    showError('table', 'Please select a table.');
+                    valid = false;
+                } else {
+                    hideError('table');
+                }
 
-  function showLoading(show) {
-    loadingIndicator.style.display = show ? 'block' : 'none';
-  }
+                if (!naturalLanguageQuery) {
+                    showError('naturalLanguageQuery', 'Please enter a query.');
+                    valid = false;
+                } else {
+                    hideError('naturalLanguageQuery');
+                }
 
-  function displayData(data) {
-    const thead = resultTable.querySelector('thead');
-    const tbody = resultTable.querySelector('tbody');
-    thead.innerHTML = '';
-    tbody.innerHTML = '';
+                return valid;
+            }
 
-    const headers = Object.keys(data[0]);
-    const headerRow = document.createElement('tr');
-    headers.forEach(h => {
-      const th = document.createElement('th');
-      th.textContent = h;
-      headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
+            // Toggle Form Elements Disabled State
+            function toggleFormElements(disabled) {
+                const formElements = queryForm.elements;
+                for (let element of formElements) {
+                    element.disabled = disabled;
+                }
+            }
 
-    const frag = document.createDocumentFragment();
-    data.forEach(row => {
-      const tr = document.createElement('tr');
-      headers.forEach(h => {
-        const td = document.createElement('td');
-        td.textContent = row[h] != null ? row[h] : '';
-        tr.appendChild(td);
-      });
-      frag.appendChild(tr);
-    });
-    tbody.appendChild(frag);
-    tableContainer.style.display = 'block';
-  }
+            // Show/Hide Loading Indicator
+            function showLoading(show) {
+                loadingIndicator.style.display = show ? 'block' : 'none';
+            }
 
-  function clearTable() {
-    resultTable.querySelector('thead').innerHTML = '';
-    resultTable.querySelector('tbody').innerHTML = '';
-    tableContainer.style.display   = 'none';
-    noDataMessage.style.display    = 'none';
-    controls.style.display         = 'none';
-    viewToggle.style.display       = 'none';
-  }
+            // Display Data in Table
+            function displayData(data) {
+                const table = document.getElementById('resultTable');
+                const thead = table.querySelector('thead');
+                const tbody = table.querySelector('tbody');
 
-  function clearAIResult() {
-    aiResultContent.textContent     = '';
-    aiResultContainer.style.display = 'none';
-  }
+                // Clear existing data
+                thead.innerHTML = '';
+                tbody.innerHTML = '';
 
-  function showAlert(message, type) {
-    alertPlaceholder.innerHTML = `
-      <div class="alert ${type}" role="alert">${message}</div>
-    `;
-    const alertEl = alertPlaceholder.querySelector('.alert');
-    alertEl.setAttribute('tabindex', '-1');
-    alertEl.focus();
-    setTimeout(() => alertPlaceholder.innerHTML = '', 5000);
-  }
+                // Populate headers
+                const headers = Object.keys(data[0]);
+                const headerRow = document.createElement('tr');
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
 
-  function clearAlerts() {
-    alertPlaceholder.innerHTML = '';
-  }
+                // Populate rows using DocumentFragment for performance
+                const fragment = document.createDocumentFragment();
+                data.forEach(rowData => {
+                    const row = document.createElement('tr');
+                    headers.forEach(header => {
+                        const td = document.createElement('td');
+                        td.textContent = rowData[header] !== null ? rowData[header] : '';
+                        row.appendChild(td);
+                    });
+                    fragment.appendChild(row);
+                });
+                tbody.appendChild(fragment);
 
-  // ==== Search with Debounce ====  
-  function debounce(fn, delay) {
-    let timer;
-    return function(...args) {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn.apply(this, args), delay);
-    };
-  }
-  searchInput.addEventListener('input', debounce(function() {
-    const term = this.value.toLowerCase();
-    resultTable.querySelectorAll('tbody tr').forEach(r => {
-      const text = Array.from(r.cells).map(c => c.textContent.toLowerCase()).join(' ');
-      r.style.display = text.includes(term) ? '' : 'none';
-    });
-  }, 300));
+                tableContainer.style.display = 'block';
+            }
+
+            // Display AI Result
+            function displayAIResult(aiText) {
+                aiResultContent.textContent = aiText;
+                // Keep aiResultContainer hidden by default
+                aiResultContainer.style.display = 'none';
+            }
+
+            // Clear Table
+            function clearTable() {
+                const table = document.getElementById('resultTable');
+                table.querySelector('thead').innerHTML = '';
+                table.querySelector('tbody').innerHTML = '';
+                tableContainer.style.display = 'none';
+                noDataMessage.style.display = 'none';
+                controls.style.display = 'none';
+                viewToggle.style.display = 'none';
+            }
+
+            // Clear AI Result
+            function clearAIResult() {
+                aiResultContent.textContent = '';
+                aiResultContainer.style.display = 'none';
+            }
+
+            // Show Alert
+            function showAlert(message, type) {
+                const alertClass = type;
+                alertPlaceholder.innerHTML = `
+                    <div class="alert ${alertClass}" role="alert">
+                        ${message}
+                    </div>
+                `;
+                const alert = alertPlaceholder.querySelector('.alert');
+                alert.setAttribute('tabindex', '-1');
+                alert.focus();
+                setTimeout(() => {
+                    alertPlaceholder.innerHTML = '';
+                }, 5000);
+            }
+
+            // Clear Alerts
+            function clearAlerts() {
+                alertPlaceholder.innerHTML = '';
+            }
+
+            // Show Error Message
+            function showError(fieldId, message) {
+                const field = document.getElementById(fieldId);
+                const errorMessage = document.getElementById(`${fieldId}Error`);
+                if (errorMessage) {
+                    errorMessage.textContent = message;
+                    errorMessage.style.display = 'block';
+                }
+                field.classList.add('input-error');
+            }
+
+            // Hide Error Message
+            function hideError(fieldId) {
+                const field = document.getElementById(fieldId);
+                const errorMessage = document.getElementById(`${fieldId}Error`);
+                if (errorMessage) {
+                    errorMessage.textContent = '';
+                    errorMessage.style.display = 'none';
+                }
+                field.classList.remove('input-error');
+            }
+
+            // Debounce Function to Improve Search Performance
+            function debounce(func, delay) {
+                let debounceTimer;
+                return function() {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => func.apply(context, args), delay);
+                }
+            }
+
+            // Search Functionality with Debouncing
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', debounce(function () {
+                const searchTerm = this.value.toLowerCase();
+                const table = document.getElementById('resultTable');
+                const tbody = table.querySelector('tbody');
+                const rows = tbody.getElementsByTagName('tr');
+
+                Array.from(rows).forEach(row => {
+                    const cells = row.getElementsByTagName('td');
+                    let match = false;
+                    Array.from(cells).forEach(cell => {
+                        if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                            match = true;
+                        }
+                    });
+                    row.style.display = match ? '' : 'none';
+                });
+            }, 300));
+
             // Export Functions
             document.getElementById('exportExcel').addEventListener('click', exportToExcel);
             document.getElementById('exportCSV').addEventListener('click', exportToCSV);
